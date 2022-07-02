@@ -3,7 +3,7 @@ use std::str;
 use std::thread;
 use std::{
     io::Read,
-    net::{SocketAddr, TcpListener, TcpStream},
+    net::{TcpListener, TcpStream},
 };
 
 fn handle_connection(mut stream: TcpStream) {
@@ -12,18 +12,19 @@ fn handle_connection(mut stream: TcpStream) {
 
     // Reading data continuously
     loop {
+        // Transfer the incoming bytes into the buffer
+        let n = stream.read(&mut buffer).unwrap();
+        // &[u8] to &str
+        let msg = str::from_utf8(&buffer[..n]).unwrap();
+
         // When the message start with "exit", close the communication
-        if buffer.starts_with(b"exit") {
+        if msg.starts_with("exit") {
             stream
                 .write(b"[Attention!] The communication is over.\n")
                 .unwrap();
             break;
         }
 
-        // Transfer the incoming bytes into the buffer
-        let n = stream.read(&mut buffer).unwrap();
-        // &[u8] to &str
-        let msg = str::from_utf8(&buffer[..n]).unwrap();
         // Response: "Get the message:" + incoming data
         stream
             .write(format!("Get the message: {}", msg).as_bytes())
@@ -32,15 +33,9 @@ fn handle_connection(mut stream: TcpStream) {
 }
 
 fn main() {
-    // Set two arbitrarily valid addresses
-    let addrs = [
-        SocketAddr::from(([127, 0, 0, 1], 7000)),
-        SocketAddr::from(([127, 0, 0, 1], 8000)),
-    ];
-
-    // Creates a new TcpListener which will be bound to the address
+    // Creates a new TcpListener which will be bound to the address "127.0.0.1:7000"
     // Use 'unwrap()' to handle the error implicitly
-    let listener = TcpListener::bind(&addrs[..]).unwrap();
+    let listener = TcpListener::bind("127.0.0.1:7000").unwrap();
 
     // -----------------------------------------------------
     // Or use 'match' explicitly
